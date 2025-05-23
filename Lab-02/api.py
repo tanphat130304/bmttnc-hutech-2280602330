@@ -2,12 +2,16 @@ from flask import Flask, request, jsonify
 from cipher.vigenere import VigenereCipher
 from cipher.caesar import CaesarCipher
 from cipher.railfence import RailFenceCipher
+from cipher.playfair import PlayfairCipher
+from cipher.transposition import TranspositionCipher
 
 app = Flask(__name__)
 
 vigenere_cipher = VigenereCipher()
 caesar_cipher = CaesarCipher()
 railfence_cipher = RailFenceCipher()
+playfair_cipher = PlayfairCipher()
+transposition_cipher = TranspositionCipher()
 
 @app.route("/api/vigenere/encrypt", methods=["POST"])
 def vigenere_encrypt():
@@ -114,6 +118,85 @@ def railfence_decrypt():
             
         decrypted_text = railfence_cipher.rail_fence_decrypt(cipher_text, key)
         return jsonify({'decrypted_message': decrypted_text})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route("/api/playfair/creatematrix", methods=["POST"])
+def playfair_creatematrix():
+    try:
+        data = request.json
+        if not data or 'key' not in data:
+            return jsonify({'error': 'Missing key field'}), 400
+            
+        key = data['key']
+        playfair_matrix = playfair_cipher.create_playfair_matrix(key)
+        return jsonify({'playfair_matrix': playfair_matrix})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route("/api/playfair/encrypt", methods=["POST"])
+def playfair_encrypt():
+    try:
+        data = request.json
+        if not data or 'plain_text' not in data or 'key' not in data:
+            return jsonify({'error': 'Missing required fields'}), 400
+            
+        plain_text = data['plain_text']
+        key = data['key']
+        playfair_matrix = playfair_cipher.create_playfair_matrix(key)
+        encrypted_text = playfair_cipher.playfair_encrypt(plain_text, playfair_matrix)
+        return jsonify({'encrypted_text': encrypted_text})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route("/api/playfair/decrypt", methods=["POST"])
+def playfair_decrypt():
+    try:
+        data = request.json
+        if not data or 'cipher_text' not in data or 'key' not in data:
+            return jsonify({'error': 'Missing required fields'}), 400
+            
+        cipher_text = data['cipher_text']
+        key = data['key']
+        playfair_matrix = playfair_cipher.create_playfair_matrix(key)
+        decrypted_text = playfair_cipher.playfair_decrypt(cipher_text, playfair_matrix)
+        return jsonify({'decrypted_text': decrypted_text})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route("/api/transposition/encrypt", methods=["POST"])
+def transposition_encrypt():
+    try:
+        data = request.json
+        if not data or 'plain_text' not in data or 'key' not in data:
+            return jsonify({'error': 'Missing required fields'}), 400
+            
+        plain_text = data['plain_text']
+        key = int(data['key'])  # Transposition key should be integer
+        
+        if not plain_text:
+            return jsonify({'error': 'Empty text not allowed'}), 400
+            
+        encrypted_text = transposition_cipher.encrypt(plain_text, key)
+        return jsonify({'encrypted_text': encrypted_text})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route("/api/transposition/decrypt", methods=["POST"])
+def transposition_decrypt():
+    try:
+        data = request.json
+        if not data or 'cipher_text' not in data or 'key' not in data:
+            return jsonify({'error': 'Missing required fields'}), 400
+            
+        cipher_text = data['cipher_text']
+        key = int(data['key'])  # Transposition key should be integer
+        
+        if not cipher_text:
+            return jsonify({'error': 'Empty text not allowed'}), 400
+            
+        decrypted_text = transposition_cipher.decrypt(cipher_text, key)
+        return jsonify({'decrypted_text': decrypted_text})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
