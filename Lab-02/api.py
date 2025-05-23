@@ -1,11 +1,13 @@
 from flask import Flask, request, jsonify
 from cipher.vigenere import VigenereCipher
 from cipher.caesar import CaesarCipher
+from cipher.railfence import RailFenceCipher
 
 app = Flask(__name__)
 
 vigenere_cipher = VigenereCipher()
 caesar_cipher = CaesarCipher()
+railfence_cipher = RailFenceCipher()
 
 @app.route("/api/vigenere/encrypt", methods=["POST"])
 def vigenere_encrypt():
@@ -75,6 +77,42 @@ def caesar_decrypt():
             return jsonify({'error': 'Empty text not allowed'}), 400
             
         decrypted_text = caesar_cipher.decrypt_text(cipher_text, key)
+        return jsonify({'decrypted_message': decrypted_text})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route("/api/railfence/encrypt", methods=["POST"])
+def railfence_encrypt():
+    try:
+        data = request.json
+        if not data or 'plain_text' not in data or 'key' not in data:
+            return jsonify({'error': 'Missing required fields'}), 400
+            
+        plain_text = data['plain_text']
+        key = int(data['key'])  # Rail fence key should be integer (number of rails)
+        
+        if not plain_text:
+            return jsonify({'error': 'Empty text not allowed'}), 400
+            
+        encrypted_text = railfence_cipher.rail_fence_encrypt(plain_text, key)
+        return jsonify({'encrypted_message': encrypted_text})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route("/api/railfence/decrypt", methods=["POST"])
+def railfence_decrypt():
+    try:
+        data = request.json
+        if not data or 'cipher_text' not in data or 'key' not in data:
+            return jsonify({'error': 'Missing required fields'}), 400
+            
+        cipher_text = data['cipher_text']
+        key = int(data['key'])  # Rail fence key should be integer (number of rails)
+        
+        if not cipher_text:
+            return jsonify({'error': 'Empty text not allowed'}), 400
+            
+        decrypted_text = railfence_cipher.rail_fence_decrypt(cipher_text, key)
         return jsonify({'decrypted_message': decrypted_text})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
